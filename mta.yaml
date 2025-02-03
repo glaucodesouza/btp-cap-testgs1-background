@@ -25,50 +25,31 @@ modules:
         properties:
           srv-url: ${default-url}
     requires:
-      - name: testgs1-db
-      - name: testgs1-auth
-
-  - name: testgs1-db-deployer
+      - name: TESTGS1_HDI
+      - name: testgs1-xsuaa
+  - name: testgs1-db
     type: hdb
     path: gen/db
     parameters:
       buildpack: nodejs_buildpack
     requires:
-      - name: testgs1-db
-
-  - name: testgs1
-    type: approuter.nodejs
-    path: app/router
-    parameters:
-      keep-existing-routes: true
-      disk-quota: 256M
-      memory: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: srv-api # must be used in xs-app.json as well
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: testgs1-auth
-    provides:
-      - name: app-api
-        properties:
-          app-protocol: ${protocol}
-          app-uri: ${default-uri}
-
+      - name: TESTGS1_HDI
+  
 resources:
-  - name: testgs1-db
+  - name: testgs1-xsuaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      path: ./xs-security.json
+      service: xsuaa
+      service-name: testgs1-xsuaa
+      service-plan: application
+
+  - name: TESTGS1_HDI
     type: com.sap.xs.hdi-container
     parameters:
       service: hana
       service-plan: hdi-shared
-  - name: testgs1-auth
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
       config:
-        xsappname: testgs1-auth
-        tenant-mode: dedicated
+        schema: TESTGS1
+    properties:
+      hdi-container-name: ${service-name}
